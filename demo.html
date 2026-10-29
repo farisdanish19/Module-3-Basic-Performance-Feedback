@@ -659,6 +659,186 @@
     }
 
     .toast.show { opacity: 1; }
+  
+    /* ── Commentary Panel (Move-by-Move Feedback) ── */
+    .commentary-section {
+      margin-top: 1rem;
+    }
+
+    .commentary-section h3 {
+      font-size: var(--text-label);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--brass);
+      margin-bottom: 0.6rem;
+    }
+
+    .commentary-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 340px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .commentary-list::-webkit-scrollbar { width: 4px; }
+    .commentary-list::-webkit-scrollbar-track { background: var(--graphite); }
+    .commentary-list::-webkit-scrollbar-thumb { background: var(--graphite-line); border-radius: 2px; }
+
+    .comment-card {
+      background: var(--graphite-raised);
+      border-radius: 3px;
+      padding: 0.65rem 0.8rem;
+      border-left: 3px solid var(--graphite-line);
+      transition: border-color 0.2s;
+    }
+
+    .comment-card.comment-best { border-left-color: var(--good); }
+    .comment-card.comment-good { border-left-color: var(--good); }
+    .comment-card.comment-sacrifice { border-left-color: var(--brass); }
+    .comment-card.comment-inaccuracy { border-left-color: var(--fair); }
+    .comment-card.comment-mistake { border-left-color: var(--poor); }
+    .comment-card.comment-blunder { border-left-color: var(--bad); }
+
+    .comment-card.comment-newest {
+      border-left-width: 4px;
+      background: var(--graphite);
+    }
+
+    .comment-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.3rem;
+    }
+
+    .comment-move {
+      font-size: var(--text-small);
+      color: var(--pale-soft);
+      font-weight: 500;
+    }
+
+    .comment-rating-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 2px 7px;
+      border-radius: 2px;
+    }
+
+    .comment-best .comment-rating-label { color: var(--graphite); background: var(--good); }
+    .comment-good .comment-rating-label { color: var(--graphite); background: var(--good); }
+    .comment-sacrifice .comment-rating-label { color: var(--graphite); background: var(--brass); }
+    .comment-inaccuracy .comment-rating-label { color: var(--graphite); background: var(--fair); }
+    .comment-mistake .comment-rating-label { color: var(--graphite); background: var(--poor); }
+    .comment-blunder .comment-rating-label { color: #fff; background: var(--bad); }
+
+    .comment-text {
+      font-size: var(--text-small);
+      color: var(--pale);
+      line-height: 1.45;
+      margin-top: 0.15rem;
+    }
+
+    .comment-ideas {
+      display: flex;
+      gap: 0.35rem;
+      margin-top: 0.3rem;
+      flex-wrap: wrap;
+    }
+
+    .idea-chip {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 2px;
+      background: var(--graphite-line);
+      color: var(--brass);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Rating Scale Bar (Verdict) ── */
+    .verdict-bar {
+      margin-top: 0.6rem;
+      padding: 0.55rem 0.7rem;
+      background: var(--graphite);
+      border-radius: 3px;
+      border: 1px solid var(--graphite-line);
+    }
+
+    .verdict-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.45rem;
+    }
+
+    .verdict-move-label {
+      font-size: var(--text-small);
+      color: var(--pale-soft);
+    }
+
+    .verdict-rating-text {
+      font-size: var(--text-small);
+      font-weight: 700;
+    }
+
+    .verdict-best .verdict-rating-text { color: var(--good); }
+    .verdict-good .verdict-rating-text { color: var(--good); }
+    .verdict-sacrifice .verdict-rating-text { color: var(--brass); }
+    .verdict-inaccuracy .verdict-rating-text { color: var(--fair); }
+    .verdict-mistake .verdict-rating-text { color: var(--poor); }
+    .verdict-blunder .verdict-rating-text { color: var(--bad); }
+
+    .verdict-scale {
+      display: flex;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      background: var(--graphite-line);
+      position: relative;
+    }
+
+    .verdict-scale-tick {
+      flex: 1;
+      border-right: 1px solid var(--graphite);
+    }
+
+    .verdict-scale-tick:last-child { border-right: none; }
+
+    .verdict-marker {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      top: -2px;
+      transition: left 0.4s ease;
+      border: 2px solid var(--pale);
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+
+    .verdict-best .verdict-marker,
+    .verdict-good .verdict-marker { background: var(--good); }
+    .verdict-sacrifice .verdict-marker { background: var(--brass); }
+    .verdict-inaccuracy .verdict-marker { background: var(--fair); }
+    .verdict-mistake .verdict-marker { background: var(--poor); }
+    .verdict-blunder .verdict-marker { background: var(--bad); }
+
+    .verdict-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .verdict-labels span {
+      font-size: 0.65rem;
+      color: var(--pale-soft);
+      letter-spacing: 0.06em;
+    }
+
   </style>
 </head>
 <body>
@@ -818,6 +998,12 @@
               lessonTitle: "The Italian Game",
               reason: "Take your game further by exploring structured opening strategies."
             }
+          ],
+          commentary: [
+            { moveNumber: 1, san: "e4", rating: "good", ratingLabel: "Good move", text: ["A solid, sensible opening move. You control the centre and free your bishop and queen."], ideas: [] },
+            { moveNumber: 2, san: "Qh5", rating: "good", ratingLabel: "Good move", text: ["The queen comes out early targeting f7. In this position it sets up a deadly threat."], ideas: [] },
+            { moveNumber: 3, san: "Bc4", rating: "best", ratingLabel: "Best move", text: ["This is the move the engine would have played. The bishop joins the attack on f7, the weakest square in Black's camp."], ideas: ["Fork"] },
+            { moveNumber: 4, san: "Qxf7#", rating: "best", ratingLabel: "Best move", text: ["This is checkmate. The queen captures on f7 supported by the bishop. The king has no escape."], ideas: ["Checkmate"] }
           ]
         }
       },
@@ -879,6 +1065,10 @@
               lessonTitle: "Surviving Scholar's Mate",
               reason: "Learn how to defend against aggressive early mating attacks."
             }
+          ],
+          commentary: [
+            { moveNumber: 1, san: "f3", rating: "mistake", ratingLabel: "Mistake", text: ["Moving the f-pawn on move 1 opens up the king's diagonal without helping piece development. Developing a centre pawn or knight was much safer."], ideas: [] },
+            { moveNumber: 2, san: "g4", rating: "blunder", ratingLabel: "Blunder", text: ["This move weakens the diagonal to your king, allowing Black to deliver checkmate immediately with Qh4#. Better was e4 to control the centre.", "A sacrifice gives up material to gain something bigger. Here your pawn is simply lost, with nothing in return."], ideas: [] }
           ]
         }
       },
@@ -904,6 +1094,15 @@
             "High accuracy: 76% of your moves were solid.",
             "Castled early to secure your king."
           ],
+          commentary: [
+            { moveNumber: 1, san: "e4", rating: "good", ratingLabel: "Good move", text: ["A solid, sensible move. Nothing is lost and your position stays healthy."], ideas: [] },
+            { moveNumber: 5, san: "O-O", rating: "best", ratingLabel: "Best move", text: ["This is the move the engine would have played. Castling early secures your king and connects the rooks."], ideas: [] },
+            { moveNumber: 12, san: "Nxd5", rating: "good", ratingLabel: "Good move", text: ["You won a pawn in the centre. The knight is well-placed on d5."], ideas: ["Free piece"] },
+            { moveNumber: 18, san: "Rxe5", rating: "sacrifice", ratingLabel: "Sacrifice!", text: ["You gave up your rook on e5 on purpose, and it works: you get more back than you lose.", "This removes the piece that was protecting something else."], ideas: ["Removing the defender"] },
+            { moveNumber: 25, san: "Qc8+", rating: "best", ratingLabel: "Best move", text: ["A strong check that drives the king into the corner. You are close to checkmate."], ideas: [] },
+            { moveNumber: 30, san: "Kf6", rating: "good", ratingLabel: "Good move", text: ["The king advances to support the queen. Coordinating pieces in the endgame is key."], ideas: [] },
+            { moveNumber: 34, san: "Qf7", rating: "blunder", ratingLabel: "Blunder", text: ["Playing Qf7 traps the enemy king with no legal moves left while not in check, conceding a draw by stalemate!", "Qg7# would have won by checkmate. When the enemy king has few squares, check every check you can give."], ideas: [] }
+          ],
           phases: [
             { phase: "opening", moves: 8, blunders: 0, mistakes: 0, verdict: "Solid opening: clean piece development" },
             { phase: "middlegame", moves: 12, blunders: 0, mistakes: 1, verdict: "Sharp middlegame: strong tactical defense" },
@@ -920,6 +1119,19 @@
               best: { from: "f6", to: "g7" },
               explanation: "Playing Qf7 traps the enemy king with no legal moves left while not in check, conceding a draw by stalemate! Qg7# would have won by checkmate."
             }
+          ],
+          commentary: [
+            { moveNumber: 1, san: "e4", rating: "good", ratingLabel: "Good move", text: ["A solid centre pawn. You control d5 and free the bishop and queen."], ideas: [] },
+            { moveNumber: 2, san: "Nf3", rating: "best", ratingLabel: "Best move", text: ["This is the move the engine would have played. It develops a piece, controls the centre, and prepares to castle."], ideas: [] },
+            { moveNumber: 3, san: "Bc4", rating: "good", ratingLabel: "Good move", text: ["The bishop goes to its most active diagonal, targeting f7."], ideas: [] },
+            { moveNumber: 5, san: "d3", rating: "good", ratingLabel: "Good move", text: ["A quiet move that supports the e4 pawn and opens a path for the dark-squared bishop."], ideas: [] },
+            { moveNumber: 6, san: "O-O", rating: "best", ratingLabel: "Best move", text: ["Castling early keeps your king safe and brings a rook into play. Textbook opening play."], ideas: [] },
+            { moveNumber: 8, san: "Bg5", rating: "good", ratingLabel: "Good move", text: ["The bishop pins the knight on f6 against the queen. This is a pin: the attacked piece cannot move away without exposing something more valuable behind it."], ideas: ["Pin"] },
+            { moveNumber: 10, san: "Qe2", rating: "good", ratingLabel: "Good move", text: ["Connecting the rooks and adding support along the e-file. A quiet but useful developing move."], ideas: [] },
+            { moveNumber: 14, san: "Nd5", rating: "mistake", ratingLabel: "Mistake", text: ["Jumping the knight allowed Black to respond with Nd4, pinning White's pieces. Developing Be3 maintains equal control."], ideas: [] },
+            { moveNumber: 18, san: "Bxf6", rating: "good", ratingLabel: "Good move", text: ["You won a knight in exchange. The bishop captures on a square where the opponent must recapture, keeping the initiative."], ideas: ["Free piece"] },
+            { moveNumber: 20, san: "Nxe5", rating: "sacrifice", ratingLabel: "Sacrifice!", text: ["You gave up your knight on purpose, and it works: the resulting position opens lines for a decisive attack.", "This is a discovered attack: moving one piece uncovers an attack from the piece behind it."], ideas: ["Sacrifice", "Discovered attack"] },
+            { moveNumber: 24, san: "Qh5", rating: "best", ratingLabel: "Best move", text: ["The queen moves to a powerful attacking square. There is no good defence against the threats."], ideas: [] }
           ],
           practiceRecommendations: [
             {
@@ -1197,6 +1409,13 @@
 
       panel.append(headerBox, resultEl, meterBox, statsDl, tray, strengthsBox);
 
+      // 6b. Commentary (move-by-move feedback from Commenter mode)
+      const commentaryEl = renderCommentary(summary.commentary);
+      if (commentaryEl) {
+        panel.appendChild(commentaryEl);
+      }
+
+
       // 7. Mistakes (if any)
       if (summary.keyMistakes.length > 0) {
         const mistakesBox = document.createElement("div");
@@ -1288,6 +1507,85 @@
       return chips.length ? chips.join("") : '<span style="color:var(--pale-soft);font-style:italic">None</span>';
     }
 
+
+    // ── Commentary Panel: move-by-move feedback (from core/commenter) ──
+    const RATING_ORDER = ["blunder", "mistake", "inaccuracy", "good", "best"];
+
+    function scalePlace(rating) {
+      if (rating === "sacrifice") return RATING_ORDER.length - 1;
+      return RATING_ORDER.indexOf(rating);
+    }
+
+    function renderVerdictBar(comment) {
+      const place = scalePlace(comment.rating);
+      const pct = (place / (RATING_ORDER.length - 1)) * 100;
+      const bar = document.createElement("div");
+      bar.className = `verdict-bar verdict-${comment.rating}`;
+      bar.innerHTML = `
+        <div class="verdict-header">
+          <span class="verdict-move-label">Move ${comment.moveNumber}, ${comment.san}</span>
+          <strong class="verdict-rating-text">${comment.ratingLabel}</strong>
+        </div>
+        <div class="verdict-scale">
+          ${RATING_ORDER.map(() => '<div class="verdict-scale-tick"></div>').join("")}
+          <div class="verdict-marker" style="left: calc(${pct}% - 5px)"></div>
+        </div>
+        <div class="verdict-labels">
+          <span>Blunder</span>
+          <span>Best</span>
+        </div>
+      `;
+      return bar;
+    }
+
+    function renderCommentary(comments) {
+      if (!comments || comments.length === 0) return null;
+
+      const section = document.createElement("div");
+      section.className = "commentary-section summary-section";
+
+      const heading = document.createElement("h3");
+      heading.textContent = "Move-by-Move Commentary";
+      section.appendChild(heading);
+
+      // Verdict bar for the latest comment (last move of the game)
+      const newest = comments[comments.length - 1];
+      section.appendChild(renderVerdictBar(newest));
+
+      // Comment list (newest first, like the live prototype)
+      const list = document.createElement("ul");
+      list.className = "commentary-list";
+
+      const reversed = [...comments].reverse();
+      reversed.forEach((comment, idx) => {
+        const card = document.createElement("li");
+        card.className = `comment-card comment-${comment.rating}${idx === 0 ? " comment-newest" : ""}`;
+
+        let inner = `
+          <div class="comment-head">
+            <span class="comment-move">Move ${comment.moveNumber}, ${comment.san}</span>
+            <span class="comment-rating-label">${comment.ratingLabel}</span>
+          </div>
+        `;
+
+        // Idea chips
+        if (comment.ideas && comment.ideas.length > 0) {
+          inner += `<div class="comment-ideas">${comment.ideas.map(idea => `<span class="idea-chip">${idea}</span>`).join("")}</div>`;
+        }
+
+        // Text lines
+        for (const line of comment.text) {
+          inner += `<p class="comment-text">${line}</p>`;
+        }
+
+        card.innerHTML = inner;
+        list.appendChild(card);
+      });
+
+      section.appendChild(list);
+      return section;
+    }
+
     function loadScenario(idx) {
       activeScenarioIdx = idx;
       inspectedMistake = null;
@@ -1339,7 +1637,9 @@
         `Key Strengths:`,
         ...s.strengths.map(x => `  * ${x}`),
         `Recommended Practice:`,
-        ...s.practiceRecommendations.map(r => `  * ${r.text} [Lesson: ${r.lessonTitle}]`)
+        ...s.practiceRecommendations.map(r => `  * ${r.text} [Lesson: ${r.lessonTitle}]`),
+        `Move-by-Move Commentary:`,
+        ...(s.commentary || []).map(c => `  ${c.moveNumber}. ${c.san} [${c.ratingLabel}] - ${c.text[0]}`)
       ].join("\n");
 
       navigator.clipboard.writeText(report).then(() => {
