@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VR Chess Academy - Module 3: Basic Performance Feedback</title>
+  <style>
+    :root {
+      /* Aluminium theme */
+      --alu: #dadbd6;
+      --alu-hi: #e6e7e2;
+      --alu-lo: #cbccc6;
+      --alu-line: #a9aba5;
+      --ink: #1b1c1e;
+      --ink-soft: #47494c;
+
+      /* Graphite theme */
+      --graphite: #1b1c1e;
+      --graphite-raised: #26282b;
+      --graphite-line: #3d3f42;
+      --pale: #edeee9;
+      --pale-soft: #babcb6;
+
+      /* Brass accent */
+      --brass: #c79f5a;
+      --brass-deep: #73541f;
+
+      /* Board oak */
+      --oak-pale: #d9c4a1;
+      --oak-smoke: #5a4334;
+
+      /* Status colors */
+      --good: #9ccfa4;
+      --fair: #e2c46b;
+      --poor: #e8a062;
+      --bad: #ef8275;
+
+      --text-small: 0.88rem;
+      --text-body: 1rem;
+      --text-lead: 1.15rem;
+      --text-title: 1.5rem;
+      --text-label: 0.78rem;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--alu);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--graphite);
+      color: var(--pale);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--brass);
+    }
+
+    header h1 {
+      font-size: 1.3rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-scope {
+      background: var(--brass);
+      color: var(--graphite);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .main-container {
+      display: grid;
+      grid-template-columns: 1fr 450px;
+      gap: 2rem;
+      max-width: 1320px;
+      width: 100%;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem;
+      flex: 1;
+    }
+
+    /* Left Side: Board & Game Scenario Picker */
+    .board-column {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .scenario-picker {
+      background: var(--alu-hi);
+      padding: 1rem;
+      border-radius: 4px;
+      border: 1px solid var(--alu-line);
+    }
+
+    .scenario-picker h3 {
+      font-size: var(--text-label);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--ink-soft);
+      margin-bottom: 0.6rem;
+    }
+
+    .scenario-buttons {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .scenario-btn {
+      padding: 8px 14px;
+      background: var(--alu);
+      border: 1px solid var(--alu-line);
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: var(--text-small);
+      font-weight: 600;
+      color: var(--ink);
+      transition: all 0.2s;
+    }
+
+    .scenario-btn:hover {
+      border-color: var(--brass-deep);
+      background: #fff;
+    }
+
+    .scenario-btn.active {
+      background: var(--graphite);
+      color: var(--pale);
+      border-color: var(--graphite);
+    }
+
+    .board-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* Chessboard with Wood Grain & Listening Room Aesthetics */
+    .chessboard {
+      width: 100%;
+      aspect-ratio: 1;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      border: 12px solid var(--graphite);
+      border-radius: 4px;
+      box-shadow: 0 26px 46px -22px rgba(27, 28, 30, 0.55);
+      position: relative;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .chessboard::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006 0.11' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 0.12 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 -1.5 1.05'/%3E%3C/filter%3E%3Crect width='480' height='480' filter='url(%23g)'/%3E%3C/svg%3E");
+      background-size: 480px 480px;
+      opacity: 0.35;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    .square {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 1;
+    }
+
+    .square.light { background: var(--oak-pale); }
+    .square.dark { background: var(--oak-smoke); }
+
+    /* Last move highlight in Brass */
+    .square.last-move::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--brass);
+      opacity: 0.42;
+      z-index: 1;
+    }
+
+    /* Blunder warning square in Red */
+    .square.warning::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--bad);
+      opacity: 0.55;
+      z-index: 1;
+    }
+
+    /* Engine recommended target square in Green */
+    .square.best-move::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--good);
+      opacity: 0.55;
+      z-index: 1;
+    }
+
+    /* King in check outline */
+    .square.in-check::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 0 4px var(--bad);
+      border-radius: 2px;
+      z-index: 2;
+    }
+
+    /* Corner coordinate labels (1-8 and a-h) */
+    .coord {
+      position: absolute;
+      font-size: 0.72rem;
+      font-weight: 700;
+      pointer-events: none;
+      user-select: none;
+      z-index: 2;
+    }
+
+    .rank-label { top: 5%; left: 6%; }
+    .file-label { bottom: 5%; right: 7%; }
+
+    .square.light .coord { color: var(--oak-smoke); }
+    .square.dark .coord { color: var(--oak-pale); }
+
+    /* Crisp Vector Piece SVGs */
+    .piece {
+      position: relative;
+      z-index: 2;
+      display: block;
+      width: 90%;
+      height: 90%;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+
+    .piece.white {
+      fill: #f4f0e6;
+      stroke: var(--graphite);
+      stroke-width: 2.4;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+    }
+
+    .piece.black {
+      fill: #202124;
+      stroke: #e9e3d3;
+      stroke-width: 2.4;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+    }
+
+    /* Vector SVG Arrow Layer */
+    .arrow-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .arrow-layer polygon {
+      fill-opacity: 0.92;
+      stroke: var(--pale);
+      stroke-opacity: 0.95;
+      stroke-width: 0.04;
+      stroke-linejoin: round;
+    }
+
+    .arrow-move { fill: var(--brass); }
+    .arrow-danger { fill: var(--bad); }
+
+    .board-indicator {
+      text-align: center;
+      font-size: var(--text-small);
+      color: var(--ink-soft);
+      font-style: italic;
+      min-height: 1.5em;
+      line-height: 1.4;
+    }
+
+    /* Right Side: The Feedback Panel (Module 3) */
+    .summary-column {
+      background: var(--graphite);
+      color: var(--pale);
+      border-radius: 4px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      box-shadow: 0 16px 30px rgba(0,0,0,0.4);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .summary-header-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .summary-header-box h2 {
+      font-size: 1.3rem;
+      font-weight: 500;
+      color: var(--pale);
+    }
+
+    .summary-badge {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 2px;
+      background: var(--graphite-raised);
+      color: var(--brass);
+      border: 1px solid var(--brass);
+    }
+
+    .summary-result {
+      font-size: 1.25rem;
+      font-weight: 300;
+      line-height: 1.3;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--graphite-line);
+    }
+
+    .result-win { color: var(--good); }
+    .result-loss { color: var(--bad); }
+    .result-draw { color: var(--pale-soft); }
+
+    .summary-accuracy-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding: 10px 14px;
+      background: var(--graphite-raised);
+      border-radius: 2px;
+    }
+
+    .accuracy-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: var(--text-small);
+    }
+
+    .accuracy-percent {
+      font-weight: 600;
+      color: var(--pale);
+    }
+
+    .accuracy-counts-text {
+      color: var(--pale-soft);
+      font-size: 0.78rem;
+    }
+
+    .accuracy-bar {
+      display: flex;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      background: var(--graphite-line);
+    }
+
+    .bar-segment { height: 100%; }
+    .segment-good { background: var(--good); }
+    .segment-inaccuracy { background: var(--fair); }
+    .segment-mistake { background: var(--poor); }
+    .segment-blunder { background: var(--bad); }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.4rem 1rem;
+      font-size: var(--text-small);
+      padding: 0.4rem 0;
+    }
+
+    .summary-stats dt { color: var(--pale-soft); }
+    .summary-stats dd {
+      font-weight: 600;
+      text-align: right;
+      color: var(--pale);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Capture Tray */
+    .summary-capture-tray {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      padding: 10px 14px;
+      background: var(--graphite-raised);
+      border-radius: 2px;
+      font-size: var(--text-small);
+    }
+
+    .capture-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .capture-row-label { color: var(--pale-soft); min-width: 65px; }
+
+    .capture-icons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: flex-end;
+    }
+
+    .piece-chip {
+      font-size: 0.85rem;
+      background: var(--graphite-line);
+      padding: 2px 7px;
+      border-radius: 2px;
+      color: var(--pale);
+      font-family: inherit;
+    }
+
+    .summary-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .summary-section h3 {
+      font-size: var(--text-label);
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--pale-soft);
+    }
+
+    .summary-strengths {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .summary-strengths li {
+      padding: 8px 12px;
+      background: rgba(156, 207, 164, 0.08);
+      border-left: 2px solid var(--good);
+      border-radius: 2px;
+      color: var(--pale);
+      font-size: var(--text-small);
+      line-height: 1.35;
+    }
+
+    .summary-mistakes {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .mistake-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding: 12px 14px;
+      border-radius: 2px;
+      background: var(--graphite-raised);
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .mistake-card.is-inspected {
+      border-color: var(--bad);
+      background: #2a2221;
+    }
+
+    .mistake-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .quality-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    .badge-blunder { background: rgba(239, 130, 117, 0.2); color: var(--bad); }
+    .badge-mistake { background: rgba(232, 160, 98, 0.2); color: var(--poor); }
+    .badge-inaccuracy { background: rgba(226, 196, 107, 0.2); color: var(--fair); }
+
+    .mistake-explanation {
+      color: var(--pale-soft);
+      font-size: var(--text-small);
+      line-height: 1.35;
+    }
+
+    .inspect-btn {
+      align-self: flex-end;
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      background: transparent;
+      border: 1px solid var(--graphite-line);
+      color: var(--brass);
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    .inspect-btn:hover { background: var(--graphite-line); }
+    .inspect-btn.active {
+      background: var(--bad);
+      color: #fff;
+      border-color: var(--bad);
+    }
+
+    .summary-phases {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      font-size: var(--text-small);
+    }
+
+    .summary-phases li {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.8rem;
+      padding: 8px 12px;
+      background: var(--graphite-raised);
+      border-radius: 2px;
+    }
+
+    .summary-phases strong {
+      color: var(--brass);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+
+    .summary-phases span {
+      color: var(--pale-soft);
+      text-align: right;
+    }
+
+    .summary-advice {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .advice-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 12px 14px;
+      background: var(--graphite-raised);
+      border-radius: 2px;
+      font-size: var(--text-small);
+    }
+
+    .advice-text { color: var(--pale); line-height: 1.4; }
+
+    .lesson-link-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding-top: 0.4rem;
+      border-top: 1px solid var(--graphite-line);
+    }
+
+    .lesson-tag { font-size: 0.75rem; color: var(--brass); font-weight: 500; }
+
+    .practice-btn {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      background: var(--brass);
+      color: var(--ink);
+      border: none;
+      border-radius: 2px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .practice-btn:hover { filter: brightness(1.1); }
+
+    .summary-actions-row {
+      display: flex;
+      gap: 0.7rem;
+      margin-top: 0.5rem;
+    }
+
+    .btn-primary {
+      padding: 10px 18px;
+      background: var(--brass);
+      color: var(--graphite);
+      font-weight: 600;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: var(--text-small);
+    }
+
+    .btn-secondary {
+      padding: 10px 16px;
+      background: transparent;
+      border: 1px solid var(--graphite-line);
+      color: var(--pale);
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: var(--text-small);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--brass);
+      color: var(--brass);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--brass);
+      color: var(--graphite);
+      padding: 10px 20px;
+      border-radius: 3px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>VR Chess Academy</h1>
+    <span class="badge-scope">Module 3: Basic Performance Feedback</span>
+  </header>
+
+  <div class="main-container">
+    <!-- Left Column: Interactive Scenario & Board -->
+    <div class="board-column">
+      <div class="scenario-picker">
+        <h3>Simulate Game Result (Click to test scenarios)</h3>
+        <div class="scenario-buttons">
+          <button class="scenario-btn active" onclick="loadScenario(0)">1. Tactical Win (Checkmate)</button>
+          <button class="scenario-btn" onclick="loadScenario(1)">2. Defeat with Blunders</button>
+          <button class="scenario-btn" onclick="loadScenario(2)">3. Solid Draw (Stalemate)</button>
+          <button class="scenario-btn" onclick="loadScenario(3)">4. Long Strategic Game</button>
+        </div>
+      </div>
+
+      <div class="board-wrapper">
+        <div id="chessboard" class="chessboard"></div>
+      </div>
+      <div id="boardIndicator" class="board-indicator">Showing final game position</div>
+    </div>
+
+    <!-- Right Column: The Performance Feedback Panel -->
+    <div id="summaryPanel" class="summary-column">
+      <!-- Injected by JavaScript -->
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Performance Report Copied to Clipboard!</div>
+
+  <script>
+    // ---------- Vector Silhouette Outlines (from pieceOutlines.ts) ----------
+    const BODIES = {
+      pawn: [[0, 0], [0.26, 0], [0.26, 0.06], [0.19, 0.1], [0.11, 0.2], [0.09, 0.36], [0.15, 0.4], [0.09, 0.44], [0, 0.44]],
+      rook: [[0, 0], [0.3, 0], [0.3, 0.07], [0.22, 0.12], [0.17, 0.5], [0.23, 0.56], [0.23, 0.78], [0.16, 0.78], [0.16, 0.7], [0, 0.7]],
+      knight: [[0, 0], [0.3, 0], [0.3, 0.07], [0.21, 0.12], [0.16, 0.26], [0, 0.26]],
+      bishop: [[0, 0], [0.29, 0], [0.29, 0.07], [0.2, 0.12], [0.11, 0.3], [0.09, 0.56], [0.16, 0.61], [0.1, 0.65], [0, 0.65]],
+      queen: [[0, 0], [0.32, 0], [0.32, 0.08], [0.22, 0.13], [0.13, 0.4], [0.1, 0.8], [0.2, 0.86], [0.13, 0.9], [0.22, 1.06], [0.16, 1.06], [0, 0.98]],
+      king: [[0, 0], [0.32, 0], [0.32, 0.08], [0.22, 0.13], [0.13, 0.4], [0.1, 0.84], [0.2, 0.9], [0.13, 0.94], [0.19, 1.08], [0, 1.08]],
+    };
+
+    const TOPPERS = {
+      pawn: [{ kind: "ball", radius: 0.14, y: 0.56 }],
+      rook: [],
+      knight: [],
+      bishop: [
+        { kind: "ball", radius: 0.15, y: 0.86, stretch: 1.55 },
+        { kind: "ball", radius: 0.05, y: 1.13 },
+      ],
+      queen: [{ kind: "ball", radius: 0.07, y: 1.1 }],
+      king: [
+        { kind: "bar", width: 0.07, height: 0.24, y: 1.2 },
+        { kind: "bar", width: 0.2, height: 0.07, y: 1.22 },
+      ],
+    };
+
+    const KNIGHT_HEAD = [
+      [-0.18, 0.24], [0.18, 0.24], [0.16, 0.4], [0.1, 0.5], [0.2, 0.53],
+      [0.31, 0.6], [0.32, 0.71], [0.24, 0.79], [0.15, 0.89], [0.08, 1.02],
+      [0.0, 0.92], [-0.09, 0.97], [-0.17, 0.8], [-0.21, 0.6], [-0.2, 0.4],
+    ];
+
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const SCALE_X = 92;
+    const SCALE_Y = 68;
+    const CENTRE_X = 50;
+    const BASE_Y = 96;
+
+    const px = (val) => Math.round((CENTRE_X + val * SCALE_X) * 10) / 10;
+    const py = (val) => Math.round((BASE_Y - val * SCALE_Y) * 10) / 10;
+
+    function bodyPath(type) {
+      const outline = BODIES[type];
+      const right = outline.map(([r, h]) => `${px(r)},${py(h)}`);
+      const left = [...outline].reverse().map(([r, h]) => `${px(-r)},${py(h)}`);
+      return `M${[...right, ...left].join(" L")} Z`;
+    }
+
+    function createPieceSvg(type, color) {
+      const svg = document.createElementNS(SVG_NS, "svg");
+      svg.setAttribute("viewBox", "0 0 100 100");
+      svg.setAttribute("class", `piece ${color}`);
+      svg.setAttribute("aria-hidden", "true");
+
+      const flip = type === "knight" && color === "black" ? -1 : 1;
+      if (type === "knight") {
+        const poly = document.createElementNS(SVG_NS, "polygon");
+        poly.setAttribute("points", KNIGHT_HEAD.map(([f, h]) => `${px(f * flip)},${py(h)}`).join(" "));
+        svg.appendChild(poly);
+      }
+
+      const body = document.createElementNS(SVG_NS, "path");
+      body.setAttribute("d", bodyPath(type));
+      svg.appendChild(body);
+
+      for (const t of TOPPERS[type]) {
+        if (t.kind === "ball") {
+          const el = document.createElementNS(SVG_NS, "ellipse");
+          el.setAttribute("cx", CENTRE_X);
+          el.setAttribute("cy", py(t.y));
+          el.setAttribute("rx", t.radius * SCALE_X);
+          el.setAttribute("ry", t.radius * (t.stretch || 1) * SCALE_Y);
+          svg.appendChild(el);
+        } else {
+          const el = document.createElementNS(SVG_NS, "rect");
+          el.setAttribute("x", px(-t.width / 2));
+          el.setAttribute("y", py(t.y + t.height / 2));
+          el.setAttribute("width", t.width * SCALE_X);
+          el.setAttribute("height", t.height * SCALE_Y);
+          svg.appendChild(el);
+        }
+      }
+      return svg;
+    }
+
+    const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const RANKS = ["1", "2", "3", "4", "5", "6", "7", "8"];
+
+    // Pre-calculated game feedback scenarios
+    const SCENARIOS = [
+      {
+        title: "Tactical Win (Checkmate)",
+        fen: "r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4",
+        lastMove: { from: "h5", to: "f7" },
+        checkSquare: "e8",
+        summary: {
+          result: "win",
+          resultText: "You won by checkmate.",
+          performanceTitle: "Masterful Performance",
+          playerMoves: 4,
+          capturesByPlayer: 1,
+          capturesByOpponent: 0,
+          playerCapturesDetail: { total: 1, byPiece: { pawn: 1, knight: 0, bishop: 0, rook: 0, queen: 0, king: 0 }, materialPoints: 1 },
+          opponentCapturesDetail: { total: 0, byPiece: { pawn: 0, knight: 0, bishop: 0, rook: 0, queen: 0, king: 0 }, materialPoints: 0 },
+          netMaterialAdvantage: 1,
+          counts: { good: 4, inaccuracy: 0, mistake: 0, blunder: 0 },
+          goodMovePercent: 100,
+          strengths: [
+            "Executed a decisive checkmate.",
+            "High accuracy: 100% of your moves were solid.",
+            "Zero blunders played: disciplined and cautious moves."
+          ],
+          phases: [
+            { phase: "opening", moves: 4, blunders: 0, mistakes: 0, verdict: "Solid opening: clean piece development" }
+          ],
+          keyMistakes: [],
+          practiceRecommendations: [
+            {
+              text: "A clean win with no serious mistakes. You are ready to try a harder opponent.",
+              lessonId: "italian-game",
+              lessonTitle: "The Italian Game",
+              reason: "Take your game further by exploring structured opening strategies."
+            }
+          ]
+        }
+      },
+      {
+        title: "Defeat with Blunders",
+        fen: "rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3",
+        lastMove: { from: "d8", to: "h4" },
+        checkSquare: "e1",
+        summary: {
+          result: "loss",
+          resultText: "You lost by checkmate.",
+          performanceTitle: "Learning Fundamentals",
+          playerMoves: 2,
+          capturesByPlayer: 0,
+          capturesByOpponent: 0,
+          playerCapturesDetail: { total: 0, byPiece: { pawn: 0, knight: 0, bishop: 0, rook: 0, queen: 0, king: 0 }, materialPoints: 0 },
+          opponentCapturesDetail: { total: 0, byPiece: { pawn: 0, knight: 0, bishop: 0, rook: 0, queen: 0, king: 0 }, materialPoints: 0 },
+          netMaterialAdvantage: 0,
+          counts: { good: 0, inaccuracy: 0, mistake: 0, blunder: 2 },
+          goodMovePercent: 0,
+          strengths: [
+            "Resilient play throughout the game against the AI."
+          ],
+          phases: [
+            { phase: "opening", moves: 2, blunders: 2, mistakes: 0, verdict: "Vulnerable opening: watch out for early piece safety" }
+          ],
+          keyMistakes: [
+            {
+              moveNumber: 2,
+              san: "g4??",
+              quality: "blunder",
+              lossCp: 1000,
+              fenBefore: "rnbqkbnr/pppp1ppp/8/4p3/8/5P2/PPPPP1PP/RNBQKBNR w KQkq - 0 2",
+              played: { from: "g2", to: "g4" },
+              best: { from: "e2", to: "e4" },
+              explanation: "This move weakens the diagonal to your king, allowing Black to deliver checkmate immediately with Qh4#. Better was e4 to control the center."
+            },
+            {
+              moveNumber: 1,
+              san: "f3?!",
+              quality: "mistake",
+              lossCp: 180,
+              fenBefore: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+              played: { from: "f2", to: "f3" },
+              best: { from: "e2", to: "e4" },
+              explanation: "Moving the f-pawn on move 1 opens up the king's diagonal without helping piece development. Developing a center pawn or knight was much safer."
+            }
+          ],
+          practiceRecommendations: [
+            {
+              text: "Before you move, ask what your opponent's most dangerous reply would be, especially any check on your king.",
+              lessonId: "back-rank-mate",
+              lessonTitle: "The back-rank mate",
+              reason: "Learn to recognize forced mating nets and defend against king attacks."
+            },
+            {
+              text: "Look out for early queen attacks against your weak diagonals.",
+              lessonId: "scholars-mate",
+              lessonTitle: "Surviving Scholar's Mate",
+              reason: "Learn how to defend against aggressive early mating attacks."
+            }
+          ]
+        }
+      },
+      {
+        title: "Solid Draw (Stalemate)",
+        fen: "7k/5Q2/6K1/8/8/8/8/8 b - - 0 1",
+        lastMove: { from: "f6", to: "f7" },
+        checkSquare: null,
+        summary: {
+          result: "draw",
+          resultText: "Draw by stalemate: the player to move had no legal move but was not in check.",
+          performanceTitle: "Solid Beginner Effort",
+          playerMoves: 34,
+          capturesByPlayer: 7,
+          capturesByOpponent: 6,
+          playerCapturesDetail: { total: 7, byPiece: { pawn: 4, knight: 1, bishop: 1, rook: 0, queen: 1, king: 0 }, materialPoints: 19 },
+          opponentCapturesDetail: { total: 6, byPiece: { pawn: 3, knight: 1, bishop: 1, rook: 1, queen: 0, king: 0 }, materialPoints: 14 },
+          netMaterialAdvantage: 5,
+          counts: { good: 26, inaccuracy: 5, mistake: 2, blunder: 1 },
+          goodMovePercent: 76,
+          strengths: [
+            "Captured the opponent's Queen.",
+            "High accuracy: 76% of your moves were solid.",
+            "Castled early to secure your king."
+          ],
+          phases: [
+            { phase: "opening", moves: 8, blunders: 0, mistakes: 0, verdict: "Solid opening: clean piece development" },
+            { phase: "middlegame", moves: 12, blunders: 0, mistakes: 1, verdict: "Sharp middlegame: strong tactical defense" },
+            { phase: "endgame", moves: 14, blunders: 1, mistakes: 1, verdict: "Endgame pressure: stay attentive with pawns and king" }
+          ],
+          keyMistakes: [
+            {
+              moveNumber: 34,
+              san: "Qf7??",
+              quality: "blunder",
+              lossCp: 800,
+              fenBefore: "7k/8/5QK1/8/8/8/8/8 w - - 0 1",
+              played: { from: "f6", to: "f7" },
+              best: { from: "f6", to: "g7" },
+              explanation: "Playing Qf7 traps the enemy king with no legal moves left while not in check, conceding a draw by stalemate! Qg7# would have won by checkmate."
+            }
+          ],
+          practiceRecommendations: [
+            {
+              text: "When the enemy king has few squares to run to, look at every check you can give. One of them may be checkmate.",
+              lessonId: "queen-mate",
+              lessonTitle: "Mate with king and queen",
+              reason: "Practice coordinating pieces to deliver decisive checkmates without stalemates."
+            }
+          ]
+        }
+      },
+      {
+        title: "Long Strategic Game",
+        fen: "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/2NP1N2/PPP1QPPP/R4RK1 w - - 0 10",
+        lastMove: { from: "e1", to: "g1" },
+        checkSquare: null,
+        summary: {
+          result: "win",
+          resultText: "You won by checkmate.",
+          performanceTitle: "Sharp & Tactical Play",
+          playerMoves: 24,
+          capturesByPlayer: 5,
+          capturesByOpponent: 3,
+          playerCapturesDetail: { total: 5, byPiece: { pawn: 2, knight: 2, bishop: 1, rook: 0, queen: 0, king: 0 }, materialPoints: 11 },
+          opponentCapturesDetail: { total: 3, byPiece: { pawn: 2, knight: 1, bishop: 0, rook: 0, queen: 0, king: 0 }, materialPoints: 5 },
+          netMaterialAdvantage: 6,
+          counts: { good: 19, inaccuracy: 3, mistake: 2, blunder: 0 },
+          goodMovePercent: 79,
+          strengths: [
+            "Castled early (move 6) to secure your king.",
+            "Zero blunders played: disciplined and cautious moves.",
+            "Achieved a solid material lead (+6 points)."
+          ],
+          phases: [
+            { phase: "opening", moves: 8, blunders: 0, mistakes: 0, verdict: "Solid opening: clean piece development" },
+            { phase: "middlegame", moves: 12, blunders: 0, mistakes: 2, verdict: "Sharp middlegame: strong tactical defense" },
+            { phase: "endgame", moves: 4, blunders: 0, mistakes: 0, verdict: "Controlled endgame technique" }
+          ],
+          keyMistakes: [
+            {
+              moveNumber: 14,
+              san: "Nd5?",
+              quality: "mistake",
+              lossCp: 160,
+              fenBefore: "r4rk1/1pp1qppp/p1np1n2/2b1p3/2B1P1b1/2NP1N2/PPP1QPPP/R1B2RK1 w - - 0 14",
+              played: { from: "c3", to: "d5" },
+              best: { from: "c1", to: "e3" },
+              explanation: "Jumping the knight allowed Black to respond with Nd4, pinning White's pieces. Developing Be3 maintains equal control."
+            }
+          ],
+          practiceRecommendations: [
+            {
+              text: "Look at every capture you can make before choosing a move. A free piece is usually the best move on the board.",
+              lessonId: "fork",
+              lessonTitle: "The fork",
+              reason: "Train your tactical eye to spot double attacks and winning captures."
+            },
+            {
+              text: "Keep building structured piece coordination.",
+              lessonId: "pin",
+              lessonTitle: "The pin",
+              reason: "Expand your tactical knowledge with the power of pins."
+            }
+          ]
+        }
+      }
+    ];
+
+    let activeScenarioIdx = 0;
+    let inspectedMistake = null;
+
+    const PIECE_TYPE_MAP = {
+      p: "pawn",
+      r: "rook",
+      n: "knight",
+      b: "bishop",
+      q: "queen",
+      k: "king",
+    };
+
+    function parseFen(fen) {
+      const parts = fen.split(" ")[0].split("/");
+      const board = {};
+      for (let r = 0; r < 8; r++) {
+        const rank = 8 - r;
+        let c = 0;
+        for (const ch of parts[r]) {
+          if (isNaN(ch)) {
+            const file = FILES[c];
+            const color = ch === ch.toUpperCase() ? "white" : "black";
+            const type = PIECE_TYPE_MAP[ch.toLowerCase()];
+            board[`${file}${rank}`] = { type, color };
+            c++;
+          } else {
+            c += parseInt(ch, 10);
+          }
+        }
+      }
+      return board;
+    }
+
+    function renderBoard(fen, lastMove = null, checkSquare = null, arrows = []) {
+      const boardEl = document.getElementById("chessboard");
+      boardEl.innerHTML = "";
+      const pieces = parseFen(fen);
+
+      // White at the bottom: ranks 8 down to 1, files a to h
+      for (const rank of [...RANKS].reverse()) {
+        for (const file of FILES) {
+          const square = `${file}${rank}`;
+          const sq = document.createElement("div");
+          sq.dataset.square = square;
+
+          const isDark = (FILES.indexOf(file) + RANKS.indexOf(rank)) % 2 === 0;
+          sq.className = `square ${isDark ? "dark" : "light"}`;
+
+          // Last move highlight
+          if (lastMove && (square === lastMove.from || square === lastMove.to)) {
+            sq.classList.add("last-move");
+          }
+
+          // In-check highlight
+          if (checkSquare && square === checkSquare) {
+            sq.classList.add("in-check");
+          }
+
+          // Corner coordinate labels
+          if (file === "a") {
+            const rankLabel = document.createElement("span");
+            rankLabel.className = "coord rank-label";
+            rankLabel.textContent = rank;
+            sq.appendChild(rankLabel);
+          }
+          if (rank === "1") {
+            const fileLabel = document.createElement("span");
+            fileLabel.className = "coord file-label";
+            fileLabel.textContent = file;
+            sq.appendChild(fileLabel);
+          }
+
+          // Piece
+          const p = pieces[square];
+          if (p) {
+            sq.appendChild(createPieceSvg(p.type, p.color));
+          }
+
+          boardEl.appendChild(sq);
+        }
+      }
+
+      // Render vector arrows overlay
+      if (arrows.length > 0) {
+        boardEl.appendChild(createArrowLayer(arrows));
+      }
+    }
+
+    function createArrowLayer(arrows) {
+      const svg = document.createElementNS(SVG_NS, "svg");
+      svg.setAttribute("class", "arrow-layer");
+      svg.setAttribute("viewBox", "0 0 8 8");
+
+      for (const arrow of arrows) {
+        svg.appendChild(createArrow(arrow));
+      }
+      return svg;
+    }
+
+    function createArrow({ from, to, kind }) {
+      const scale = kind === "move" ? 1 : 0.72;
+
+      const centre = (sq) => {
+        const file = FILES.indexOf(sq[0]);
+        const rank = RANKS.indexOf(sq[1]);
+        return { x: file + 0.5, y: 7 - rank + 0.5 };
+      };
+
+      const start = centre(from);
+      const tip = centre(to);
+
+      const length = Math.hypot(tip.x - start.x, tip.y - start.y) || 1;
+      const ux = (tip.x - start.x) / length;
+      const uy = (tip.y - start.y) / length;
+      const px = -uy;
+      const py = ux;
+
+      const SHAFT = 0.09 * scale;
+      const HEAD = 0.28 * scale;
+      const HEAD_LENGTH = 0.45 * scale;
+      const tail = { x: start.x + ux * 0.25, y: start.y + uy * 0.25 };
+      const neck = { x: tip.x - ux * HEAD_LENGTH, y: tip.y - uy * HEAD_LENGTH };
+
+      const points = [
+        [tail.x + px * SHAFT, tail.y + py * SHAFT],
+        [neck.x + px * SHAFT, neck.y + py * SHAFT],
+        [neck.x + px * HEAD, neck.y + py * HEAD],
+        [tip.x, tip.y],
+        [neck.x - px * HEAD, neck.y - py * HEAD],
+        [neck.x - px * SHAFT, neck.y - py * SHAFT],
+        [tail.x - px * SHAFT, tail.y - py * SHAFT],
+      ];
+
+      const shape = document.createElementNS(SVG_NS, "polygon");
+      shape.setAttribute("class", `arrow-${kind}`);
+      shape.setAttribute("points", points.map(([x, y]) => `${x},${y}`).join(" "));
+      return shape;
+    }
+
+    function renderSummary(summary) {
+      const panel = document.getElementById("summaryPanel");
+      panel.innerHTML = "";
+
+      // 1. Header Box
+      const headerBox = document.createElement("div");
+      headerBox.className = "summary-header-box";
+      headerBox.innerHTML = `
+        <h2>Game summary</h2>
+        <span class="summary-badge">${summary.performanceTitle}</span>
+      `;
+
+      // 2. Result text
+      const resultEl = document.createElement("p");
+      resultEl.className = `summary-result result-${summary.result}`;
+      resultEl.textContent = summary.resultText;
+
+      // 3. Move Quality & Accuracy Bar
+      const totalMoves = summary.counts.good + summary.counts.inaccuracy + summary.counts.mistake + summary.counts.blunder;
+      const meterBox = document.createElement("div");
+      meterBox.className = "summary-accuracy-container";
+      meterBox.innerHTML = `
+        <div class="accuracy-labels">
+          <span class="accuracy-percent">${summary.goodMovePercent !== null ? summary.goodMovePercent + "% Solid Moves" : "Move Quality"}</span>
+          <span class="accuracy-counts-text">${summary.counts.blunder} blunders, ${summary.counts.mistake} mistakes, ${summary.counts.inaccuracy} inaccuracies</span>
+        </div>
+        <div class="accuracy-bar">
+          <div class="bar-segment segment-good" style="width: ${(summary.counts.good / totalMoves) * 100}%" title="${summary.counts.good} good moves"></div>
+          <div class="bar-segment segment-inaccuracy" style="width: ${(summary.counts.inaccuracy / totalMoves) * 100}%" title="${summary.counts.inaccuracy} inaccuracies"></div>
+          <div class="bar-segment segment-mistake" style="width: ${(summary.counts.mistake / totalMoves) * 100}%" title="${summary.counts.mistake} mistakes"></div>
+          <div class="bar-segment segment-blunder" style="width: ${(summary.counts.blunder / totalMoves) * 100}%" title="${summary.counts.blunder} blunders"></div>
+        </div>
+      `;
+
+      // 4. Stats Table
+      const statsDl = document.createElement("dl");
+      statsDl.className = "summary-stats";
+      statsDl.innerHTML = `
+        <dt>Your moves</dt><dd>${summary.playerMoves}</dd>
+        <dt>Pieces you captured</dt><dd>${summary.capturesByPlayer} (${summary.playerCapturesDetail.materialPoints} pts)</dd>
+        <dt>Pieces you lost</dt><dd>${summary.capturesByOpponent} (${summary.opponentCapturesDetail.materialPoints} pts)</dd>
+        <dt>Material advantage</dt><dd>${summary.netMaterialAdvantage > 0 ? "+" + summary.netMaterialAdvantage + " (Lead)" : summary.netMaterialAdvantage < 0 ? summary.netMaterialAdvantage + " (Deficit)" : "Even (0)"}</dd>
+      `;
+
+      // 5. Captured Tray
+      const tray = document.createElement("div");
+      tray.className = "summary-capture-tray";
+      tray.innerHTML = `
+        <div class="capture-row">
+          <span class="capture-row-label">You took</span>
+          <div class="capture-icons">${renderChips(summary.playerCapturesDetail.byPiece)}</div>
+        </div>
+        <div class="capture-row">
+          <span class="capture-row-label">You lost</span>
+          <div class="capture-icons">${renderChips(summary.opponentCapturesDetail.byPiece)}</div>
+        </div>
+      `;
+
+      // 6. Strengths
+      const strengthsBox = document.createElement("div");
+      strengthsBox.className = "summary-section";
+      strengthsBox.innerHTML = `
+        <h3>What you did well</h3>
+        <ul class="summary-strengths">
+          ${summary.strengths.map(s => `<li>${s}</li>`).join("")}
+        </ul>
+      `;
+
+      panel.append(headerBox, resultEl, meterBox, statsDl, tray, strengthsBox);
+
+      // 7. Mistakes (if any)
+      if (summary.keyMistakes.length > 0) {
+        const mistakesBox = document.createElement("div");
+        mistakesBox.className = "summary-section";
+        mistakesBox.innerHTML = `<h3>Moves to learn from</h3>`;
+        const list = document.createElement("ul");
+        list.className = "summary-mistakes";
+
+        summary.keyMistakes.forEach((m, idx) => {
+          const isInspected = inspectedMistake === m;
+          const li = document.createElement("li");
+          li.className = `mistake-card ${isInspected ? "is-inspected" : ""}`;
+          li.innerHTML = `
+            <div class="mistake-header">
+              <strong>Move ${m.moveNumber}: ${m.san}</strong>
+              <span class="quality-badge badge-${m.quality}">${m.quality}</span>
+            </div>
+            <p class="mistake-explanation">${m.explanation}</p>
+            <button class="inspect-btn ${isInspected ? "active" : ""}" onclick="toggleInspect(${idx})">
+              ${isInspected ? "Showing on board ✕" : "Inspect on board →"}
+            </button>
+          `;
+          list.appendChild(li);
+        });
+        mistakesBox.appendChild(list);
+        panel.appendChild(mistakesBox);
+      }
+
+      // 8. Phase Breakdown
+      if (summary.phases.length > 0) {
+        const phasesBox = document.createElement("div");
+        phasesBox.className = "summary-section";
+        phasesBox.innerHTML = `
+          <h3>Game phases</h3>
+          <ul class="summary-phases">
+            ${summary.phases.map(p => `
+              <li>
+                <strong>${p.phase}</strong>
+                <span>${p.moves} moves • ${p.verdict}</span>
+              </li>
+            `).join("")}
+          </ul>
+        `;
+        panel.appendChild(phasesBox);
+      }
+
+      // 9. Recommended Practice
+      const adviceBox = document.createElement("div");
+      adviceBox.className = "summary-section";
+      adviceBox.innerHTML = `<h3>Recommended practice</h3>`;
+      const adviceList = document.createElement("ul");
+      adviceList.className = "summary-advice";
+
+      summary.practiceRecommendations.forEach(r => {
+        const li = document.createElement("li");
+        li.className = "advice-card";
+        li.innerHTML = `
+          <p class="advice-text">${r.text}</p>
+          ${r.lessonId ? `
+            <div class="lesson-link-row">
+              <span class="lesson-tag">Lesson: ${r.lessonTitle}</span>
+              <button class="practice-btn" onclick="alert('Module 1 Tutorial Integration:\\nSwitching to Learn Screen and opening lesson: ${r.lessonTitle} (${r.lessonId})')">Practice in tutorial →</button>
+            </div>
+          ` : ""}
+        `;
+        adviceList.appendChild(li);
+      });
+      adviceBox.appendChild(adviceList);
+      panel.appendChild(adviceBox);
+
+      // 10. Actions Row
+      const actionsRow = document.createElement("div");
+      actionsRow.className = "summary-actions-row";
+      actionsRow.innerHTML = `
+        <button class="btn-primary" onclick="alert('Restarting game simulation!')">Play again</button>
+        <button class="btn-secondary" onclick="copyReport()">Copy report</button>
+      `;
+      panel.appendChild(actionsRow);
+    }
+
+    function renderChips(byPiece) {
+      const names = { queen: "Queen", rook: "Rook", bishop: "Bishop", knight: "Knight", pawn: "Pawn" };
+      const chips = [];
+      for (const [p, count] of Object.entries(byPiece)) {
+        if (count > 0 && names[p]) {
+          chips.push(`<span class="piece-chip">${count} ${names[p]}${count > 1 ? "s" : ""}</span>`);
+        }
+      }
+      return chips.length ? chips.join("") : '<span style="color:var(--pale-soft);font-style:italic">None</span>';
+    }
+
+    function loadScenario(idx) {
+      activeScenarioIdx = idx;
+      inspectedMistake = null;
+      document.querySelectorAll(".scenario-btn").forEach((btn, i) => {
+        btn.classList.toggle("active", i === idx);
+      });
+
+      const sc = SCENARIOS[idx];
+      renderBoard(sc.fen, sc.lastMove, sc.checkSquare);
+      document.getElementById("boardIndicator").textContent = "Showing final game position";
+      renderSummary(sc.summary);
+    }
+
+    function toggleInspect(mistakeIdx) {
+      const sc = SCENARIOS[activeScenarioIdx];
+      const m = sc.summary.keyMistakes[mistakeIdx];
+
+      if (inspectedMistake === m) {
+        inspectedMistake = null;
+        renderBoard(sc.fen, sc.lastMove, sc.checkSquare);
+        document.getElementById("boardIndicator").textContent = "Showing final game position";
+      } else {
+        inspectedMistake = m;
+        const arrows = [
+          { from: m.played.from, to: m.played.to, kind: "danger" }
+        ];
+        if (m.best) {
+          arrows.push({ from: m.best.from, to: m.best.to, kind: "move" });
+        }
+        renderBoard(m.fenBefore, null, null, arrows);
+        document.getElementById("boardIndicator").innerHTML = `
+          <strong>Inspecting Move ${m.moveNumber} (${m.san})</strong>:
+          <span style="color:var(--bad)">■ Red Arrow: Played Blunder (${m.played.from}→${m.played.to})</span> |
+          <span style="color:var(--brass)">■ Brass Arrow: Engine Best Move (${m.best.from}→${m.best.to})</span>
+        `;
+      }
+      renderSummary(sc.summary);
+    }
+
+    function copyReport() {
+      const sc = SCENARIOS[activeScenarioIdx];
+      const s = sc.summary;
+      const report = [
+        `=== VR CHESS ACADEMY - PERFORMANCE REPORT ===`,
+        `Result: ${s.resultText}`,
+        `Performance: ${s.performanceTitle} (${s.goodMovePercent}% solid moves)`,
+        `Moves Played: ${s.playerMoves}`,
+        `Captures: ${s.capturesByPlayer} (${s.playerCapturesDetail.materialPoints} pts) vs ${s.capturesByOpponent} lost (${s.opponentCapturesDetail.materialPoints} pts)`,
+        `Key Strengths:`,
+        ...s.strengths.map(x => `  * ${x}`),
+        `Recommended Practice:`,
+        ...s.practiceRecommendations.map(r => `  * ${r.text} [Lesson: ${r.lessonTitle}]`)
+      ].join("\n");
+
+      navigator.clipboard.writeText(report).then(() => {
+        const toast = document.getElementById("toast");
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 2500);
+      });
+    }
+
+    // Initialize on page load
+    loadScenario(0);
+  </script>
+</body>
+</html>

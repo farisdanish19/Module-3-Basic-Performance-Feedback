@@ -65,8 +65,13 @@ const progress = new TutorialProgress(storage);
 // the first time a move is reviewed.
 const classifier = createOnnxMoveClassifier();
 
-createPlayScreen(screens.play, engine, storage, classifier);
-createTutorialScreen(screens.learn, progress, { onPlay: () => show("play") });
+const tutorial = createTutorialScreen(screens.learn, progress, { onPlay: () => show("play") });
+createPlayScreen(screens.play, engine, storage, classifier, {
+  onPracticeLesson: (lessonId: string) => {
+    show("learn");
+    tutorial.openLessonById(lessonId);
+  },
+});
 
 // Someone who has never finished a lesson starts with the tutorial.
 show(progress.completedCount() === 0 ? "learn" : "play");

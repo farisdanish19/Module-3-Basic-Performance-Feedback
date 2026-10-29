@@ -167,3 +167,59 @@ describe("summariseGame: recommendations", () => {
     expect(summariseGame(lost, everything, "white").recommendations).toHaveLength(3);
   });
 });
+
+describe("summariseGame: enhanced Module 3 feedback", () => {
+  it("provides detailed piece-by-piece captures and net material points", () => {
+    // 1.e4 d5 2.exd5 Qxd5 3.Nc3 Qxg2 4.Bxg2:
+    // White captured d5 (pawn = 1) and g2 (queen = 9) => total 10 points
+    // Black captured d5 (pawn = 1) and g2 (pawn = 1) => total 2 points
+    const gameMoves: [string, string][] = [
+      ["e2", "e4"], ["d7", "d5"],
+      ["e4", "d5"], ["d8", "d5"],
+      ["b1", "c3"], ["d5", "g2"],
+      ["f1", "g2"],
+    ];
+    const pos = play(gameMoves);
+    const summary = summariseGame(pos, [], "white");
+
+    expect(summary.playerCapturesDetail.total).toBe(2);
+    expect(summary.playerCapturesDetail.byPiece.pawn).toBe(1);
+    expect(summary.playerCapturesDetail.byPiece.queen).toBe(1);
+    expect(summary.playerCapturesDetail.materialPoints).toBe(10);
+
+    expect(summary.opponentCapturesDetail.total).toBe(2);
+    expect(summary.opponentCapturesDetail.byPiece.pawn).toBe(2);
+    expect(summary.opponentCapturesDetail.materialPoints).toBe(2);
+
+    expect(summary.netMaterialAdvantage).toBe(8);
+  });
+
+  it("links practice recommendations directly to tutorial lessons", () => {
+    const lost = play(FOOLS_MATE);
+    const summary = summariseGame(lost, [review("blunder", "allowed-mate", 1000)], "white");
+    expect(summary.practiceRecommendations[0].lessonId).toBe("back-rank-mate");
+    expect(summary.practiceRecommendations[0].lessonTitle).toBe("The back-rank mate");
+    expect(summary.practiceRecommendations[0].reason).toContain("mating");
+
+    const missedCaptureSummary = summariseGame(lost, [review("mistake", "missed-capture", 300)], "white");
+    expect(missedCaptureSummary.practiceRecommendations[0].lessonId).toBe("fork");
+  });
+
+  it("identifies player strengths and positive achievements", () => {
+    // Scholars mate: white wins by checkmate in 4 moves, captures a pawn with queen
+    const won = play(SCHOLARS_MATE);
+    const summary = summariseGame(won, [review("best"), review("best"), review("good"), review("best")], "white");
+    expect(summary.strengths.length).toBeGreaterThan(0);
+    expect(summary.strengths.some((s) => s.includes("checkmate"))).toBe(true);
+    expect(summary.performanceTitle).toBe("Masterful Performance");
+  });
+
+  it("breaks down performance across game phases", () => {
+    const won = play(SCHOLARS_MATE);
+    const summary = summariseGame(won, [review("good")], "white");
+    expect(summary.phases.length).toBe(1);
+    expect(summary.phases[0].phase).toBe("opening");
+    expect(summary.phases[0].verdict).toContain("opening");
+  });
+  });
+});

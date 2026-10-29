@@ -15,11 +15,11 @@ export function createTutorialScreen(
   container: HTMLElement,
   progress: TutorialProgress,
   actions: TutorialActions,
-): void {
+): { openLessonById(lessonId: string): void } {
   /** Tidies up the lesson that is open, if any, before showing something else. */
   let closeLesson: () => void = () => undefined;
 
-  function showList(): void {
+  function showList(): { openLessonById(lessonId: string): void } {
     closeLesson();
     closeLesson = () => undefined;
 
@@ -93,7 +93,7 @@ export function createTutorialScreen(
     }
   }
 
-  function openLesson(lesson: Lesson): void {
+  function openLesson(lesson: Lesson): { openLessonById(lessonId: string): void } {
     closeLesson();
     const session = new LessonSession(lesson);
     // The practice board follows the same interface as a real game, so the
@@ -131,7 +131,7 @@ export function createTutorialScreen(
     // Made once per lesson, so its marker slides from step to step.
     const progressScale = createTickScale(lesson.steps.length, "scale-progress");
 
-    function draw(): void {
+    function draw(): { openLessonById(lessonId: string): void } {
       const view = session.getView();
       const selection = selector.getState();
 
@@ -249,6 +249,13 @@ export function createTutorialScreen(
   }
 
   showList();
+
+  return {
+    openLessonById(lessonId: string): void {
+      const lesson = LESSONS.find((l) => l.id === lessonId);
+      if (lesson) openLesson(lesson);
+    },
+  };
 }
 
 function button(label: string, className: string, onClick: () => void): HTMLButtonElement {

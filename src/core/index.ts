@@ -9,7 +9,14 @@ export type { Candidate, CandidateGroup, MoveCategory } from "./coach/candidates
 export { commentOn } from "./commenter/comment";
 export type { CommentRating, MoveComment } from "./commenter/comment";
 export { summariseGame } from "./feedback/summary";
-export type { GameResult, GameSummary } from "./feedback/summary";
+export type {
+  CaptureDetails,
+  GameResult,
+  GameSummary,
+  PhaseBreakdown,
+  PieceCount,
+  RecommendedPractice,
+} from "./feedback/summary";
 export { describeThreat, findThreatenedPieces } from "./analysis/threats";
 export type { Threat, ThreatKind } from "./analysis/threats";
 export { findHint } from "./hints/hint";

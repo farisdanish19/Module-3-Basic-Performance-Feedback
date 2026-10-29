@@ -17,7 +17,9 @@ import type {
   Color,
   KeyValueStore,
   MoveClassifier,
+  MoveReview,
   RatingChange,
+  Square,
 } from "../../core/index";
 import { Board2D } from "../board/board2d/board2d";
 import type { BoardArrow, BoardView } from "../board/boardView";
@@ -42,12 +44,17 @@ interface CoachAdvice {
   candidates: Candidate[];
 }
 
+export interface PlayScreenActions {
+  onPracticeLesson?(lessonId: string): void;
+}
+
 /** Builds the screen where a game is played: board on the left, panel on the right. */
 export function createPlayScreen(
   container: HTMLElement,
   engine: ChessEngine,
   store: KeyValueStore,
   classifier: MoveClassifier,
+  actions?: PlayScreenActions,
 ): void {
   const game = new Game();
   const selector = new MoveSelector(game);
@@ -75,6 +82,7 @@ export function createPlayScreen(
   let advice: CoachAdvice | null = null;
   let adviceRequestedFor: string | null = null;
   let previewed: Candidate | null = null;
+  let inspectedMistake: MoveReview | null = null;
 
   const screen = document.createElement("main");
   screen.className = "play-screen";
@@ -139,6 +147,7 @@ export function createPlayScreen(
     // Picking a suggestion plays it through the same door as a mouse move.
     onChoose: (candidate) => {
       previewed = null;
+    inspectedMistake = null;
       game.attemptMove(candidate.move.from, candidate.move.to, candidate.move.promotion);
     },
   });
@@ -157,6 +166,7 @@ export function createPlayScreen(
       onHelpModeChanged: (mode) => {
         helpMode = mode;
         previewed = null;
+    inspectedMistake = null;
         refreshCoach();
         draw();
       },
@@ -165,7 +175,7 @@ export function createPlayScreen(
     helpMode,
   );
   const controls = createControls({
-    onNewGame: () => game.newGame(),
+    onNewGame: () => { inspectedMistake = null; game.newGame(); },
     onUndo: () => opponent.undoTurn(),
     onFlip: () => {
       orientation = other(orientation);
@@ -174,7 +184,19 @@ export function createPlayScreen(
     onToggleView: () => void toggleBoardView(),
   });
   const moveList = createMoveList();
-  const summary = createGameSummary({ onPlayAgain: () => game.newGame() });
+  const summary = createGameSummary({
+    onPlayAgain: () => {
+      inspectedMistake = null;
+      game.newGame();
+    },
+    onInspectMistake: (review) => {
+      inspectedMistake = review;
+      draw();
+    },
+    onPracticeLesson: (lessonId) => {
+      actions?.onPracticeLesson?.(lessonId);
+    },
+  });
   // The opponent's level, shown as a marker on a scale of ten under the board.
   const level = document.createElement("p");
   level.className = "level";
@@ -311,13 +333,14 @@ export function createPlayScreen(
       opponent.setLevel(adaptive.getLevel());
       setup.setAdaptiveRating(adaptive.getRating());
     }
-    summary.update(gameSummary, reviewer.pendingCount(), opponentChoice === "adaptive" ? levelChange : null);
+    summary.update(gameSummary, reviewer.pendingCount(), opponentChoice === "adaptive" ? levelChange : null, inspectedMistake);
     promotion.update(selection.pendingPromotion ? position.turn : null);
   }
 
   game.onPositionChanged((position) => {
     // Suggestions belong to one position and are dropped when it changes.
     previewed = null;
+    inspectedMistake = null;
     // A fresh game can be rated again.
     if (position.history.length === 0) {
       gameRated = false;
